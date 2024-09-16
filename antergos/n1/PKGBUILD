@@ -2,9 +2,9 @@
 # Contributor: D. Can Celasun <dcelasun[at]gmail[dot]com>
 
 pkgname=n1
-pkgver=0.4.402
+pkgver=1.5.0
 buildver=b0ec335
-pkgrel=2
+pkgrel=3
 pkgdesc="A mail client for Mac, Linux, and Windows that is built on the modern web and designed to be extended."
 arch=('x86_64')
 url="https://nylas.com/N1/"
@@ -15,7 +15,7 @@ optdepends=('gnome-keyring: provides secret service')
 groups=('email') 
 source=("https://github.com/nylas/N1/releases/download/${pkgver}/N1-${pkgver}.deb")
 install=${pkgname}.install
-md5sums=('SKIP')
+md5sums=('0510570bc107f4329c99b62719d774c4')
 
 
 # BEGIN ANTBS METADATA
@@ -24,6 +24,7 @@ _monitored_service='github'
 _monitored_type='releases'
 _monitored_project='nylas'
 _monitored_repo='N1'
+_monitored_match_pattern='1.5.0'
 # END ANTBS METADATA
 
 

@@ -2,60 +2,58 @@
 # Contributor: isiachi <isiachi@rhyeworld.it>
 
 pkgname=spl
-_pkgver=0.6.5.8
-_rev=964
-_kern=4.8.13_1
-pkgver="${_pkgver}.r${_rev}.${_kern}"
-pkgrel=2
+_pkgver=0.7.13
+pkgver=0.7.13
+pkgrel=3
 pkgdesc="Solaris Porting Layer kernel modules."
+groups=("system" "zfs")
 license=('GPL')
 makedepends=("git")
-depends=("dkms" "spl-utils=${pkgver}" "linux-headers")
+depends=("spl-utils>=${pkgver%+*}" "dkms" "linux-headers" "linux<5.1" "lsb-release")
 provides=("spl-dkms=${pkgver}")
 conflicts=("spl-dkms")
 install=spl.install
-arch=("i686" "x86_64")
+arch=("x86_64")
 url="http://zfsonlinux.org/"
-_commit="${_pkgver}"
-source=("${pkgname}::https://github.com/zfsonlinux/spl/archive/spl-${_pkgver}.zip")
-md5sums=('3b98916ba77f91725252345dc5ff0788')
-install=spl.install
+_commit=''
+_tag="spl-${_pkgver}"
+source=(
+	"https://github.com/zfsonlinux/${pkgname}/archive/${_tag}.zip"
+)
+md5sums=('d33ecece67d08ea7c0b2103458aaad60')
 
+# BEGIN ANTBS METADATA
+_is_monitored='True'
+_monitored_service='github'
+_monitored_type='tags'
+_monitored_project='zfsonlinux'
+_monitored_repo='spl'
+_monitored_match_pattern='/(?<=zfs-|spl-)\S+/'
+# END ANTBS METADATA
 
-#pkgver() {
-#	local _kernel='4.6.2_1'
-#	cd "${srcdir}/spl"
-#	printf "%s.r%s_%s" "${_pkgver}" "$(git rev-list --count HEAD)" "${_kernel}"
-#}
+prepare() {
+    cd "${srcdir}/${pkgname}-${_tag}"
+}
 
 build() {
-	cd "${srcdir}/${pkgname}-${pkgname}-${_commit}"
-	./autogen.sh
-
-	{ [[ "${CARCH}" == i686 ]] && _at_enable="--enable-atomic-spinlocks"; } || _at_enable=""
-	{ [[ "${CARCH}" == i686 ]] && _i686_target="--target=i686-linux-gnu"; } || _i686_target=""
-
-	./configure \
-		--prefix=/usr \
-		--libdir=/usr/lib \
-		--sbindir=/usr/bin \
-		--with-config=user \
-		${_at_enable} \
-		${_i686_target}
-
-	make
+    cd "${srcdir}/${pkgname}-${_tag}"
+    ./autogen.sh
+    ./configure \
+        --prefix=/usr \
+        --libdir=/usr/lib \
+        --sbindir=/usr/bin \
+        --with-config=user
+    make
 }
 
 package() {
-	dkmsdir="${pkgdir}/usr/src/spl-${_pkgver}"
-	install -d "${dkmsdir}"
+    dkmsdir="${pkgdir}/usr/src/spl-${_pkgver}"
+    install -d "${dkmsdir}"
 
-	cp -a "${srcdir}/${pkgname}-${pkgname}-${_commit}"/. ${dkmsdir}
+    cp -a "${srcdir}/${pkgname}-${_tag}"/. ${dkmsdir}
 
-	cd "${dkmsdir}"
-	./autogen.sh
-	scripts/dkms.mkconf -v ${_pkgver} -f dkms.conf -n spl
-	chmod g-w,o-w -R .
+    cd "${dkmsdir}"
+    ./autogen.sh
+    scripts/dkms.mkconf -v ${_pkgver} -f dkms.conf -n ${pkgname}
+    chmod g-w,o-w -R .
 }
-
-# -*- mode: bash;-*-

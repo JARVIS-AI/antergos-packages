@@ -2,18 +2,17 @@
 # Contributor: Philipp Wolfer <ph.wolfer@gmail.com>
 
 pkgname=peek
-pkgver=0.8.0
+pkgver=1.3.1
 pkgrel=2
 pkgdesc='An animated GIF recorder.'
-arch=('i686' 'x86_64')
+arch=('x86_64')
 url='https://github.com/phw/peek'
 groups=('tools')
 license=('GPL3')
-depends=('gtk3' 'ffmpeg' 'imagemagick')
+depends=('gtk3' 'ffmpeg' 'libkeybinder3')
 makedepends=('cmake' 'vala' 'gettext')
-source=("${pkgname}-${pkgver}.zip::https://github.com/phw/peek/archive/v${pkgver}.zip"
-		'https://github.com/phw/peek/pull/37.patch')
-md5sums=('')
+source=("${pkgname}-${pkgver}.zip::https://github.com/phw/peek/archive/${pkgver}.zip")
+md5sums=('cc3885639aa5dd15d64518d4a4b03045')
 
 
 # BEGIN ANTBS METADATA
@@ -28,11 +27,8 @@ _monitored_repo='peek'
 build() {
 	cd "${srcdir}/${pkgname}-${pkgver}"
 
-	# https://github.com/phw/peek/pull/37
-	patch -Np1 -i ../37.patch
-
 	cmake \
-		-DCMAKE_INSTALL_PREFIX="${pkgdir}/usr" \
+		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DBUILD_TESTS=OFF \
 		-DGSETTINGS_COMPILE=OFF .
 	make
@@ -41,7 +37,7 @@ build() {
 
 package() {
 	cd "${srcdir}/${pkgname}-${pkgver}"
-	make install
+	make DESTDIR="${pkgdir}" install
 }
 
-# -*- mode: bash;-*-
+

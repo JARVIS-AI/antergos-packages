@@ -3,7 +3,7 @@ pkgname=xinput_calibrator
 pkgver=0.7.5
 pkgrel=5
 pkgdesc="A generic touchscreen calibration program for X.Org"
-arch=('i686' 'x86_64')
+arch=('x86_64')
 url="http://www.freedesktop.org/wiki/Software/xinput_calibrator"
 license=('MIT')
 depends=('gtkmm' 'libsigc++' 'libtool')
@@ -25,4 +25,4 @@ package() {
   install scripts/xinput_calibrator{_get_hal_calibration.sh,_pointercal.sh} $pkgdir/usr/bin/ || return 1
   install -m 644 COPYING $pkgdir/usr/share/licenses/xinput_calibrator/LICENSE || return 1
 }
-# -*- mode: bash;-*-
+

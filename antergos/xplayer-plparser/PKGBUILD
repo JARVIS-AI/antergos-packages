@@ -5,7 +5,7 @@ pkgname=xplayer-plparser
 pkgver=1.0.2
 pkgrel=1
 pkgdesc="Playlist parser for the XApps Project's xplayer."
-arch=('i686' 'x86_64')
+arch=('x86_64')
 license=('GPL')
 groups=('xapps')
 depends=('gmime' 'libsoup' 'libarchive' 'libquvi')
@@ -14,11 +14,11 @@ conflicts=('xplayer-plparser-git')
 url='https://github.com/linuxmint/xplayer-plparser'
 
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/linuxmint/${pkgname}/archive/${pkgver}.tar.gz")
-md5sums=('6295bb19c2125a5439636809e61d9306')
+md5sums=('586fe3e544a4ebf0d450861ac65efb49')
 
 
 # BEGIN ANTBS METADATA
-_is_monitored='True'
+_is_monitored='False'
 _monitored_service='github'
 _monitored_type='tags'
 _monitored_project='linuxmint'
@@ -42,4 +42,4 @@ package(){
 	make DESTDIR="${pkgdir}" install
 }
 
-# -*- mode: bash;-*-
+

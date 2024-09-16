@@ -1,0 +1,247 @@
+#!/bin/python
+# -*- coding: utf-8 -*-
+#
+#  pkgdo
+#
+#  Copyright © 2017 Antergos
+#
+#  This file is part of The Antergos Build Server, (AntBS).
+#
+#  AntBS is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  AntBS is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  The following additional terms are in effect as per Section 7 of the license:
+#
+#  The preservation of all legal notices and author attributions in
+#  the material or in the Appropriate Legal Notices displayed
+#  by works containing it is required.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with AntBS; If not, see <http://www.gnu.org/licenses/>.
+
+""" Command-line PKGBUILD Maintenance Utility """
+
+import re
+import os
+import subprocess
+from typing import Union
+import json
+
+import click
+
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_DIR = os.path.realpath(os.path.join(THIS_DIR, '../antergos'))
+
+MATE_DIR = os.path.join(REPO_DIR, 'mate')
+CINNAMON_DIR = os.path.join(REPO_DIR, 'cinnamon')
+LIRI_DIR = os.path.join(REPO_DIR, 'liri')
+
+GROUP_DIRS = {
+    'cinnamon': CINNAMON_DIR,
+    'liri': LIRI_DIR,
+    'mate': MATE_DIR,
+}
+
+ATTRIBUTES = {
+    'gtk': 'gtk3',
+    'qt': 'qt5-base',
+}
+
+GROUPS = {}
+PATHS = {}
+ATTRIBUTES_PATHS = {
+    'gtk': [],
+    'qt': [],
+}
+
+GROUPS_CHOICE = click.Choice(GROUP_DIRS.keys())
+ATTRIBUTES_CHOICE = click.Choice(ATTRIBUTES.keys())
+
+
+def _find_paths():
+    with os.scandir(REPO_DIR) as dirlist:
+        paths = {
+            d.name: d.path
+            for d in dirlist
+            if _is_active_package(d) and d not in GROUP_DIRS
+        }
+
+    group_paths = {}
+
+    for group in GROUP_DIRS:
+        with os.scandir(GROUP_DIRS[group]) as dirlist:
+            GROUPS[group] = [d for d in dirlist if d.is_dir() and not d.is_symlink()]
+
+        with os.scandir(GROUP_DIRS[group]) as dirlist:
+            group_paths.update({
+                d.name: d.path
+                for d in dirlist
+                if _is_active_package(d)
+            })
+
+    paths.update(group_paths)
+    PATHS.update(paths)
+
+    for pkgname, path in PATHS.items():
+        with open(f'{path}/PKGBUILD', 'r') as PKGBUILD:
+            contents = PKGBUILD.read()
+
+            for attribute, dep in ATTRIBUTES.items():
+                if dep in contents:
+                    ATTRIBUTES_PATHS[attribute].append(path)
+
+
+def _get_group_directory(group):
+    try:
+        path = GROUP_DIRS[group]
+    except KeyError:
+        path = REPO_DIR
+
+    return path
+
+
+def _has_autosums(path: str) -> bool:
+    content = open(path, 'r').read()
+
+    return '_autosums' in content or '_auto_sums' in content
+
+
+def _is_active_package(pkgdir: os.DirEntry):
+    return all((
+        pkgdir.is_dir(),
+        not pkgdir.is_symlink(),
+        os.path.exists(os.path.join(pkgdir.path, 'PKGBUILD'))
+    ))
+
+
+def _replace_in_file(path, what_to_replace, replace_it_with, count, simple):
+    content = open(path, 'r').read()
+
+    if not simple:
+        result, count = re.subn(what_to_replace, replace_it_with, content, count=count, flags=re.M)
+    else:
+        _args = [what_to_replace, replace_it_with]
+
+        if count > 0:
+            _args.append(count)
+
+        result = content.replace(*_args)
+        count = count if count else 'all'
+
+    if result == content:
+        return count
+
+    with open(path, 'w') as _file:
+        _file.write(result)
+
+    return count
+
+
+def _run_command(all: bool, group: str, pkgs: list, cmd: list) -> None:
+    paths = []
+
+    if not PATHS:
+        _find_paths()
+
+    if all:
+        paths = [path for pkg, path in PATHS.items()]
+
+    elif group:
+        paths = [p.path for p in GROUPS[group]]
+
+    elif pkgs:
+        paths = [PATHS[p] for p in pkgs]
+
+    paths = {
+        path: set(os.listdir(path)) for path in paths
+        if 'updpkgsums' not in cmd or not _has_autosums(os.path.join(path, 'PKGBUILD'))
+    }
+    
+    print(paths)
+
+    for path, contents in paths.items():
+        if 'mv' == cmd[0]:
+            if os.path.exists(f'{path}/PKGBUILD'):
+                os.rename(f'{path}/PKGBUILD', f'{path}/PKGBUILD.inactive')
+        else:
+            subprocess.run(cmd, cwd=path, universal_newlines=True)
+
+        new_contents = set(os.listdir(path))
+
+        if contents == new_contents:
+            continue
+
+        to_remove = [f for f in new_contents - contents if f not in ['PKGBUILD', 'PKGBUILD.inactive', '.SRCINFO']]
+
+        for item in to_remove:
+            os.remove(os.path.join(path, item))
+
+
+@click.group()
+def do():
+    pass
+
+
+@do.command()
+@click.option('-g', '--group', type=GROUPS_CHOICE, help='Limit scope to PKGBUILDS in group')
+@click.option('-c', '--count', default=0, help='The maximum number of occurrences to be replaced')
+@click.option('-s', '--simple', is_flag=True, help='WHAT_TO_REPLACE is a simple string')
+@click.argument('what-to-replace')
+@click.argument('replace-it-with')
+def replace(group, count, simple, what_to_replace, replace_it_with):
+    dirpath = _get_group_directory(group)
+    pkgbuilds = (
+        os.path.join(dirpath, pkgdir, 'PKGBUILD')
+        for pkgdir in os.listdir(dirpath)
+        if os.path.exists(os.path.join(dirpath, pkgdir, 'PKGBUILD'))
+    )
+
+    for pkgbuild in pkgbuilds:
+        replaced_count = _replace_in_file(pkgbuild, what_to_replace, replace_it_with, count, simple)
+        click.echo(f'{pkgbuild}: {replaced_count} occurrences replaced')
+
+
+@do.command(help='Update .SRCINFO for packages.')
+@click.option('-a', '--all', is_flag=True, help='Generate .SRCINFO files for all packages.')
+@click.option('-g', '--group', type=GROUPS_CHOICE, help='Generate .SRCINFO for packages in group.')
+@click.argument('packages', nargs=-1)
+def mksrcinfo(all, group, packages):
+    _run_command(all, group, packages, ['mksrcinfo'])
+
+
+@do.command(help='Update checksums for packages.')
+@click.option('-a', '--all', is_flag=True, help='Update checksums for all packages.')
+@click.option('-g', '--group', type=GROUPS_CHOICE, help='Update checksums for packages in group.')
+@click.argument('packages', nargs=-1)
+def updpkgsums(all, group, packages):
+    _run_command(all, group, packages, ['updpkgsums'])
+
+
+@do.command(help='Update checksums AND .SRCINFO for packages.')
+@click.option('-a', '--all', is_flag=True, help='Update checksums and .SRCINFO for all packages.')
+#@click.option('-a', '--attribute', type=GROUPS_CHOICE, help='Limit scope to PKGBUILDS with attribute')
+@click.option('-g', '--group', type=GROUPS_CHOICE, help='Update checksums and .SRCINFO for packages in group.')
+@click.argument('packages', nargs=-1)
+def update(all, group, packages):
+    _run_command(all, group, packages, ['updpkgsums'])
+    _run_command(all, group, packages, ['mksrcinfo'])
+
+
+@do.command(help='Remove package(s) from the repo.')
+@click.option('-g', '--group', type=GROUPS_CHOICE, help='Remove all packages in group.')
+@click.argument('packages', nargs=-1)
+def remove(group, packages):
+    _run_command(False, group, packages, ['mv'])
+
+
+
+if __name__ == '__main__':
+    do()

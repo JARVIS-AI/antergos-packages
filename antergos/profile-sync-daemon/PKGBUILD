@@ -2,7 +2,7 @@
 # Contributor: graysky <graysky AT archlinux DOT us>
 
 pkgname='profile-sync-daemon'
-pkgver=6.31
+pkgver=6.34
 pkgrel=1
 pkgdesc='Syncs browser profiles to tmpfs reducing SSD/HDD calls and speeding-up browsers.'
 arch=('any')
@@ -13,7 +13,7 @@ conflicts=('firefox-sync' 'goanysync' 'go-anysync-git' 'iceweasel-sync'
 		'tmpfs-store' 'tmpfs-sync' 'user-profile-sync-daemon')
 source=("$pkgname-$pkgver::https://github.com/graysky2/profile-sync-daemon/archive/v$pkgver.tar.gz")
 install=psd.install
-sha256sums=('')
+md5sums=('159cabc39972be8d72e760a0025b5cd9')
 
 # BEGIN ANTBS METADATA
 _allowed_in=('main' 'staging')
@@ -35,4 +35,4 @@ package() {
   install -Dm644 MIT "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   rm -f "$pkgdir/usr/share/man/man1/psd-overlay-helper.1.gz"
 }
-# -*- mode: bash;-*-
+

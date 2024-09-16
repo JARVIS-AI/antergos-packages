@@ -4,35 +4,44 @@
 # Contributor: David Manouchehri <d@32t.ca>
 
 pkgname=dropbox
-pkgver=16.4.30
+pkgver=70.4.93
 pkgrel=1
 pkgdesc="A free service that lets you bring your photos, docs, and videos anywhere and share them easily."
-arch=("i686" "x86_64")
+arch=("x86_64")
 url="http://www.dropbox.com"
 license=(custom)
 depends=("dbus-glib" "libsm" "libxslt")
-conflicts=("dropbox-experimental")
+conflicts=("dropbox-experimental" 'dropbox-fix2')
+provides=('dropbox-fix2')
 groups=('cloud-storage')
-options=('!strip' '!upx')
+options=('!strip')
 install="dropbox.install"
-
-
-source_i686=("https://d1ilhw0800yew8.cloudfront.net/client/dropbox-lnx.x86-${pkgver}.tar.gz")
-source_x86_64=("https://d1ilhw0800yew8.cloudfront.net/client/dropbox-lnx.x86_64-${pkgver}.tar.gz")
-source+=("dropbox.png"
-		"dropbox.desktop"
-		"terms.txt"
-		"dropbox.service"
-		"dropbox@.service")
-md5sums=('2be5a57e477adf82a7d9b7fe77f22086'
+source=(
+	"https://clientupdates.dropboxstatic.com/dbx-releng/client/dropbox-lnx.x86_64-${pkgver}.tar.gz"
+	"dropbox.png"
+	"dropbox.desktop"
+	"terms.txt"
+	"dropbox.service"
+	"dropbox@.service"
+	"dropbox-filesystem-fix.tar.gz::https://github.com/dark/dropbox-filesystem-fix/archive/72f4d04852d5002d9ba29b3f77fbacb2c12d1432.tar.gz"
+	"arch_paths.patch"
+)
+md5sums=('ece1b8555234454689c31ff8b1843b69'
+         '2be5a57e477adf82a7d9b7fe77f22086'
          'f3350cc0fb7b5f4fb6f2c0adda7e1260'
          '9e140f8de1bab8f26165068bb2c5e8b4'
-         '2301498f15f87836ea9923269e2f23be'
-         'bf7692b7f5c823a5ef47deb10ce3b0dc')
-md5sums_i686=('a6fcaae5335027b226aac3c269471151')
-md5sums_x86_64=('15c9da8aa1721b1212617453b0a32917')
+         '3340737d21431f94d387117d1e679882'
+         '10dfc9f40a08baec98af8682ebf2b6b5'
+         'f41071f69e6f10c62fa40470ece02363'
+         '7275dd87e1643f1bf28e3c8d24711a80')
 
 #https://www.dropbox.com/release_notes/rss.xml
+
+build() {
+  cd "${srcdir}"/dropbox-filesystem-fix-*
+  patch -p1 < ../arch_paths.patch
+  make
+}
 
 package() {
 	install -d "$pkgdir"/opt
@@ -49,5 +58,7 @@ package() {
 
 	rm -f "$pkgdir"/opt/dropbox/library.zip
 	ln -s dropbox "$pkgdir"/opt/dropbox/library.zip
+	
+	install -Dm755 "$srcdir"/dropbox-filesystem-fix-*/libdropbox_fs_fix.so "$pkgdir"/usr/local/lib/libdropbox_fs_fix.so
+	install -Dm755 "$srcdir"/dropbox-filesystem-fix-*/dropbox_start.py "$pkgdir"/usr/local/bin/dropbox
 }
-# -*- mode: bash;-*-

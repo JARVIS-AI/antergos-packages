@@ -1,43 +1,30 @@
-# Maintainer: Janne Haapsaari <haaja@iki.fi>
-# Contributor: Christopher Krooß <didi2002 at web.de>
-# Contributor: Antergos Devs <devs@antergos.com>
+# Maintainer: Antergos Developers <dev@antergos.com>
+# Original Maintainer: drakkan
+# Contributor: XZS 
+# Contributor: Carl George
+# Contributor: Janne Haapsaari
+# Contributor: Christopher Krooß
+# Contributor: killajoe <archlinux@kamprad.net>
 
 pkgname=gnome-shell-extension-dash-to-dock
-pkgver=v55
+_pkgname=dash-to-dock-extensions.gnome.org-v
+pkgver=66
 pkgrel=1
-epoch=1
-pkgdesc="A gnome-shell extension that transforms the dash into an intellihide dock"
+pkgdesc="Move the dash out of the overview transforming it in a dock"
 arch=('any')
-url="https://github.com/micheleg/dash-to-dock"
+url="https://micheleg.github.io/dash-to-dock/"
 license=('GPL')
-groups=('gnome-shell-extensions')
-depends=('dconf')
-makedepends=('gnome-shell' 'gnome-common' 'intltool')
-source=("$pkgname::https://github.com/micheleg/dash-to-dock/archive/extensions.gnome.org-${pkgver}.tar.gz")
-#source=("$pkgname::https://github.com/micheleg/dash-to-dock/archive/experimental_gnome-3.16.tar.gz")
-#source=("$pkgname::https://github.com/micheleg/dash-to-dock/archive/master.tar.gz")
-md5sums=('')
-
-_archivename="dash-to-dock-extensions.gnome.org-${pkgver}"
-#_archivename="dash-to-dock-experimental_gnome-3.16"
-#_archivename="dash-to-dock-master"
-
-prepare() {
-    cd "$srcdir/$_archivename"
-    sed -i 's/INSTALLBASE = ~\/.local\/share\/gnome-shell\/extensions/INSTALLBASE = ${DESTDIR}/' Makefile
-    #sed -i 's|"3.12"|"3.14", "3.15", "3.16"|g' metadata.json
-}
+depends=('gnome-shell')
+makedepends=('intltool' 'gettext')
+source=("https://github.com/micheleg/dash-to-dock/archive/extensions.gnome.org-v${pkgver}.tar.gz")
+sha256sums=('5eb550d7f6981d3f9179243a718679ff8a309b4391d86e422ca3518381710e2b')
 
 build() {
-    cd "$srcdir/$_archivename"
-    make
+  cd "${srcdir}"/${_pkgname}${pkgver}
+  make
 }
 
 package() {
-    cd "$srcdir/$_archivename"
-    mkdir -p "${pkgdir}/usr/share/gnome-shell/extensions" "${pkgdir}/usr/share/glib-2.0/schemas/"
-    make DESTDIR=${pkgdir}/usr/share/gnome-shell/extensions install
-    install -m644 "schemas/org.gnome.shell.extensions.dash-to-dock.gschema.xml" \
-        "${pkgdir}/usr/share/glib-2.0/schemas/org.gnome.shell.extensions.dash-to-dock.gschema.xml"
+  cd "${srcdir}"/${_pkgname}${pkgver}
+  make DESTDIR="${pkgdir}" VERSION="${pkgver}" install
 }
-# -*- mode: bash;-*-

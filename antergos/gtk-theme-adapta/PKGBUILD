@@ -3,30 +3,34 @@
 
 pkgname=gtk-theme-adapta
 _theme_name=adapta-gtk-theme
-pkgver=3.22.3.20
+pkgver=3.91.0.150
 pkgrel=1
 pkgdesc="An adaptive Gtk+ theme based on Material Design Guidelines."
 arch=('any')
 url="https://github.com/tista500/Adapta"
 license=('GPL2')
-depends=('gtk2' 'gtk-engine-murrine' 'gtk-engines' 'gtk3>3.18')
-makedepends=('glib2' 'ruby-sass' 'ruby-bundler' 'inkscape')
+# depends=('gtk2' 'gtk-engine-murrine' 'gtk-engines' 'gtk3')
+depends=('adapta-gtk-theme')
+# makedepends=('glib2' 'sassc' 'inkscape' 'gnome-shell')
 groups=('themes' 'themes::gtk')
-source=("https://github.com/adapta-project/${_theme_name}/archive/${pkgver}.tar.gz")
-md5sums=('fa79d9be0677aab1b92cab512f5d4aeb')
+# source=("https://github.com/adapta-project/${_theme_name}/archive/${pkgver}.tar.gz")
+# md5sums=('bfe7d731a263122fc670283668df3300')
+source=()
+md5sums=()
 
 
 # BEGIN ANTBS METADATA
-_is_monitored='True'
+_is_monitored='False'
 _monitored_service='github'
 _monitored_type='releases'
 _monitored_project='adapta-project'
 _monitored_repo='adapta-gtk-theme'
-_monitored_match_pattern='/(3\.22\.\d+\.\d{1,3})$/'
 # END ANTBS METADATA
 
 
 build() {
+	return 0
+
 	cd "${_theme_name}-${pkgver}"
 	./autogen.sh \
 		--disable-unity \
@@ -42,8 +46,10 @@ build() {
 }
 
 package() {
+	return 0
+
 	cd "${_theme_name}-${pkgver}"
 	make DESTDIR="${pkgdir}" install
 }
 
-# -*- mode: bash;-*-
+

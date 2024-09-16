@@ -3,17 +3,17 @@
 
 pkgname=copyq
 _realname=CopyQ
-pkgver=2.8.2-beta-1
+pkgver=3.7.3-beta-osx-fix-open-in-fullscreen
 pkgrel=1
 pkgdesc='Clipboard manager with searchable and editable history.'
 url='https://github.com/hluk/CopyQ'
 groups=('tools')
-depends=('qt5-base' 'libxtst' 'qt5-webkit' 'qt5-svg' 'qt5-tools' 'qt5-script' 'libxfixes')
+depends=('qt5-base' 'libxtst' 'qt5-webkit' 'qt5-svg' 'qt5-tools' 'qt5-script' 'libxfixes' 'qt5-x11extras')
 makedepends=('cmake')
 license=('GPL3')
-arch=('i686' 'x86_64')
+arch=('x86_64')
 source=("https://github.com/hluk/${_realname}/archive/v${pkgver}.tar.gz")
-md5sums=('f0abc1c2f84928d483c5a8403a998d86')
+md5sums=('afb6ad7982b928fdf4213ca4ac54c738')
 
 
 # BEGIN ANTBS METADATA
@@ -40,4 +40,4 @@ package() {
 	cd "${srcdir}/build"
 	make DESTDIR="${pkgdir}" install
 }
-# -*- mode: bash;-*-
+

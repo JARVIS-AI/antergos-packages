@@ -12,17 +12,8 @@ toolbox_system_version=''
 
 setup_toolbox_user_directory() {
 	mkdir -p "${toolbox_user_dir}"
-
 	ln -s "${toolbox_system_dir}/.settings.json" "${toolbox_user_dir}/.settings.json"
 	ln -s /usr/share/pixmaps/jetbrains-toolbox.svg "${toolbox_user_dir}/toolbox.svg"
-
-	cp /usr/share/applications/jetbrains-toolbox.desktop "${HOME}/.config/autostart"
-	sed -i 's|bin\/jetbrains-toolbox|bin/jetbrains-toolbox --minimize|g' \
-		"${HOME}/.config/autostart/jetbrains-toolbox.desktop"
-	chmod 000 "${HOME}/.config/autostart/jetbrains-toolbox.desktop"
-
-	cp /usr/share/applications/jetbrains-toolbox.desktop "${HOME}/.local/share/applications"
-	chmod 000 "${HOME}/.local/share/applications/jetbrains-toolbox.desktop"
 }
 
 
@@ -56,11 +47,16 @@ copy_lastest_installed_version_file() {
 }
 
 
+run_toolbox() {
+	exec "${toolbox_system_dir}/jetbrains-toolbox" --disable-seccomp-filter-sandbox "$@"
+}
+
+
 
 if [[ 'true' = "${is_first_run}" ]]; then
 	setup_toolbox_user_directory
 	copy_lastest_installed_version_file
-	exec "${toolbox_system_dir}/jetbrains-toolbox" "$@"
+	run_toolbox
 
 elif ! [[ -h "${toolbox_user_dir}/bin" ]]; then
 	move_binary_and_create_symlink
@@ -68,9 +64,9 @@ elif ! [[ -h "${toolbox_user_dir}/bin" ]]; then
 elif ! versions_match; then
 	remove_symlink_to_binary
 	copy_lastest_installed_version_file
-	exec "${toolbox_system_dir}/jetbrains-toolbox" "$@"
+	run_toolbox
 fi
 
-
+export LD_LIBRARY_PATH="/usr/lib/openssl-1.0:$LD_LIBRARY_PATH"
 exec "${toolbox_user_dir}/bin/jetbrains-toolbox" "$@"
 

@@ -1,70 +1,78 @@
 # Maintainer: Antergos Developers <dev@antergos.com>
 # Contributor: Guillaume Benoit <guillaume@manjaro.org>
 
-pkgname=pamac
-pkgver=4.1.6
-_pkgver=4.1.6
-pkgrel=2
-# This is the release package so the below _gitcommit variable should (usually) be commented out.
-_gitcommit=""
-pkgdesc="A Gtk3 frontend for libalpm"
-arch=('i686' 'x86_64')
-url="https://github.com/manjaro/pamac"
+pkgname=(pamac pamac-tray-appindicator)
+pkgver=7.3.5
+_pkgver=7.3.5
+pkgrel=1
+pkgdesc='A GTK3 frontend for libalpm'
+arch=('x86_64')
+url='https://gitlab.manjaro.org/applications/pamac'
 license=('GPL3')
-depends=('glib2>=2.46' 'json-glib' 'libsoup' 'dbus-glib' 'polkit' 'yaourt' 'vte3>=0.38'
-		'gtk3>=3.18' 'libnotify' 'desktop-file-utils' 'pacman' 'gnutls>=3.4')
-makedepends=('gettext' 'itstool' 'vala>=0.28')
+depends=('glib2>=2.42' 'json-glib' 'libsoup' 'dbus-glib' 'polkit' 'vte3>=0.38' 'gtk3>=3.22'
+         'libnotify' 'desktop-file-utils' 'pacman>=5.1' 'pacman<5.2' 'gnutls>=3.4'
+         'appstream-glib' 'archlinux-appstream-data' 'git')
+makedepends=('gettext' 'meson' 'vala>=0.36.6' 'libappindicator-gtk3' 'gobject-introspection')
 backup=('etc/pamac.conf')
-replaces=('pamac-aur')
 conflicts=('pamac-dev')
-options=(!emptydirs)
-
-
-if [ "${_gitcommit}" != "" ]; then
-	source=("pamac-$pkgver-$pkgrel.tar.gz::$url/archive/$_gitcommit.tar.gz")
-else
-	source=("pamac-$_pkgver.tar.gz::$url/archive/v$_pkgver.tar.gz"
-			"aur-search.patch::https://github.com/manjaro/pamac/commit/9bcd61cfb7228f8318c5c8b95e8a78436d51e156.patch")
-fi
-
-md5sums=('1615b837a97a7caf69301862aa5a2fdf')
+source=(
+	"pamac-$_pkgver.tar.gz::$url/-/archive/v$_pkgver/$pkgname-v$_pkgver.tar.gz"
+)
+md5sums=('889b99e5e9c904f68e23afac08af8369')
 
 
 # BEGIN ANTBS METADATA
 _is_monitored='True'
-_monitored_service='github'
+_monitored_service='gitlab'
 _monitored_type='releases'
-_monitored_project='manjaro'
+_monitored_project='applications/pamac'
 _monitored_repo='pamac'
 # END ANTBS METADATA
 
 
 prepare() {
-	if [ "$_gitcommit" != "" ]; then
-		mv "$srcdir/pamac-$_gitcommit" "$srcdir/pamac-$pkgver"
-	fi
-
-	cd "$srcdir/pamac-$pkgver"
+	cd "${srcdir}/pamac-v${pkgver}"
 
 	# adjust version string
-	sed -i -e "s|\"$_pkgver\"|\"$pkgver-$pkgrel\"|g" src/manager_window.vala 
-	# don't install systemd timers for manjaro's pacman-mirrors script
-	sed -i '/pamac-mirrorlist/d' src/Makefile
+	sed -i -e "s|\"$_pkgver\"|\"$pkgver-$pkgrel\"|g" src/version.vala
 
 	# patches here
-	patch -p1 -i "$srcdir/aur-search.patch"
 }
 
 build() {
-  cd "$srcdir/pamac-$_pkgver"
+	cd "${srcdir}/pamac-v${pkgver}"
+	mkdir -p build && cd build
 
-  # build
-  make all
+	meson --prefix=/usr --sysconfdir=/etc --libdir=lib -Denable-appindicator=true ..
+	ninja
 }
 
-package() {
-  cd "$srcdir/pamac-$_pkgver"
-  make prefix="$pkgdir"/usr sysconfdir="$pkgdir"/etc install
+package_pamac() {
+	optdepends=(
+		'pamac-dev-tray-appindicator: tray icon for KDE'
+	)
+	conflicts=('pamac')
+	provides=('pamac')
+	backup=('etc/pamac.conf')
+	install='pamac.install'
+
+
+	cd "${srcdir}/pamac-v${pkgver}/build"
+	DESTDIR="${pkgdir}" ninja install
+
+	# Remove pamac-tray-appindicator
+	rm "${pkgdir}/usr/bin/pamac-tray-appindicator"
+	rm -f "${pkgdir}/etc/xdg/autostart/pamac-tray-appindicator.desktop"
 }
 
-# -*- mode: bash;-*-
+package_pamac-tray-appindicator() {
+	pkgdesc='Tray icon using appindicator for improved KDE support.'
+	depends=('pamac' 'libappindicator-gtk3')
+	conflicts=('pamac-tray-appindicator-dev')
+	backup=()
+
+	cd "${srcdir}/pamac-v${pkgver}/build"
+	install -Dm755 src/pamac-tray-appindicator "${pkgdir}/usr/bin/pamac-tray-appindicator"
+	install -Dm644 ../data/applications/pamac-tray-appindicator.desktop "${pkgdir}/etc/xdg/autostart/pamac-tray-appindicator.desktop"
+}
+
